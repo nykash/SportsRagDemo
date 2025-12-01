@@ -1,0 +1,8 @@
+whisperx
+torch
+torchaudio
+torchvision
+transformers
+pandas
+tqdm
+ollama

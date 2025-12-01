@@ -1,0 +1,109 @@
+You are analyzing volleyball commentary to extract structured, factual descriptions of on-court actions in JSON format.
+
+---
+
+### 🏐 1️⃣ Match Context:
+This commentary is from a men’s international volleyball match between:
+
+**Team Japan**
+- Players: Nishida, Sekita, Ishikawa, Onodera, Fukuzawa, Yamauchi, Yamaguchi  
+- Common misspellings: “Maschida” → Nishida, “Mishida” → Nishida, “Mashida” → Nishida, “Sakita” → Sekita
+
+**Team Brazil**
+- Players: Wallace, Lucarelli, Lucão, Thales, Cachopa, Isac, Lucas Saatkamp  
+- Common misspellings: “Luka Raleigh” → Lucarelli, “Sackkamp” → Saatkamp, “Luccarelli” → Lucarelli
+
+If a name does not belong to either roster, assume it’s a commentator or referee and ignore it.
+
+---
+
+### 💬 2️⃣ Volleyball Commentary Glossary (Standard + Slang)
+
+These are common volleyball phrases and slang used by commentators.  
+Use them to infer structured actions and descriptive language.
+
+| Term / Phrase | Meaning |
+|----------------|----------|
+| **Ace** | Serve that lands directly for a point |
+| **Serve / service / serving** | Player begins a rally |
+| **Picked up / dig / it's up / kept alive / still up** | Successful defensive play to prevent the ball from hitting the floor |
+| **Shank / bad pass / off the mark** | Poor reception or dig |
+| **Free ball** | Soft return that gives the opponent an easy setup |
+| **Tool / off the hands** | Spiker hits off blocker’s hands and ball lands out — attacker’s point |
+| **Block / stuff block / roof / denied / stuffed** | Player stops a spike at the net |
+| **Set / assist / delivers / feeds / puts it up** | Setter prepares the ball for an attacker |
+| **Spike / attack / hit / kill / swing** | Offensive attack toward the other side |
+| **Bounce / bounced it / hammered / crushed / destroyed** | Strong, emphatic spike — usually a point |
+| **Reception / pass / serve receive** | First contact to handle a serve |
+| **Sideout** | Team regains the serve |
+| **Challenge / review / timeout / discussion** | Non-gameplay — ignore |
+| **Back row / pipe / D-ball** | Attack from a back-row position |
+| **Overpass** | Pass unintentionally crosses the net |
+| **Coverage / scramble / kept alive / off the block** | Defensive saves |
+| **Out / long / wide** | Ball lands out of bounds |
+| **Tip / roll shot / soft touch** | Gentle attack meant to place the ball |
+| **Dig / pick / scoop** | Defensive contact after a spike |
+| **Net touch / foot fault / service error** | Violation — can be included as an `"Action"` if it affects the rally outcome |
+
+If the commentary includes excitement or adjectives (e.g., “massive spike”, “beautiful set”, “incredible save”), store these in the `"Description"` field.
+
+---
+
+### 🎯 3️⃣ Your Task:
+From the given commentary segment(s), identify only **real volleyball actions** that occur on the court.  
+Each detected event must include:
+
+- `"Team"` → `"Japan"` or `"Brazil"`  
+- `"Player"` → Corrected player name  
+- `"Action"` → Short, precise description of the player’s main action (e.g., `"spikes"`, `"sets to Nishida"`, `"blocks Lucarelli"`, `"digs Nishida’s attack"`)  
+- `"Description"` → Optional adjectives or expressive phrases describing *how* the action was performed (e.g., `"massive spike"`, `"beautiful set"`, `"crucial block"`, `"powerful serve"`). If no descriptive language is found, leave this field empty (`""`).
+
+Do **not** include filler commentary, background analysis, or general remarks like “What a start!” unless they directly modify an action.
+
+---
+
+### 🧾 4️⃣ Output Format:
+Return a valid JSON array, for example:
+
+[
+  {
+    "Team": "Japan",
+    "Player": "Sekita",
+    "Action": "sets the ball to Nishida (back row)",
+    "Description": "perfect setup"
+  },
+  {
+    "Team": "Japan",
+    "Player": "Nishida",
+    "Action": "spikes cross-court for a point",
+    "Description": "massive spike"
+  },
+  {
+    "Team": "Brazil",
+    "Player": "Wallace",
+    "Action": "blocks Nishida’s spike",
+    "Description": "crucial block at the net"
+  },
+  {
+    "Team": "Japan",
+    "Player": "Yamaguchi",
+    "Action": "digs Lucarelli’s attack",
+    "Description": "diving save"
+  }
+]
+
+---
+
+### 🧩 5️⃣ Commentary Input:
+{{Insert text from your CSV here}}
+
+---
+
+### ⚠️ 6️⃣ Extraction Rules:
+- Include only gameplay actions.
+- Fix all player name errors.
+- Ignore commentators discussing *past plays* unless context clearly indicates ongoing action.
+- Split multi-action sentences into multiple JSON entries (e.g., “Nishida spikes, blocked by Wallace” → two events).
+- Keep the `"Description"` expressive but factual — only adjectives from commentary or clear implications (e.g., “powerful”, “quick”, “crucial”, “high”, “clean”).
+- Maintain chronological order.
+- Ensure the output is valid JSON with no trailing commas.
