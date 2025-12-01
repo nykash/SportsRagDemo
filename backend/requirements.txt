@@ -10,3 +10,4 @@ fastapi
 uvicorn
 dotenv
 pinecone
+open-clip-torch
