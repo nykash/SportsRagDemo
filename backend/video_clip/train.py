@@ -6,6 +6,7 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import open_clip
 import torch.nn.functional as F
+from tqdm import tqdm
 
 def read_frame(video: cv2.VideoCapture, frame_index: int) -> np.ndarray:
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
@@ -50,8 +51,6 @@ class EmbeddingModel(nn.Module):
         x = self.model.encode_image(x)
         x = x.view(og_shape[0], og_shape[1], *x.shape[1:]).contiguous()
 
-        print("x shape", x.shape)
-
         x = self.fusion(x)
         return x
     
@@ -89,36 +88,39 @@ class EmbeddingDataset(Dataset):
         return len(self.video_paths)
 
     def __getitem__(self, idx):
-        video_path = self.video_paths[idx]
-        text_path = self.text_paths[idx]
+        # video_path = self.video_paths[idx]
+        # text_path = self.text_paths[idx]
 
-        with open(text_path, 'r') as f:
-            text_description = f.read()
+        # with open(text_path, 'r') as f:
+        #     text_description = f.read()
 
-        cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            raise ValueError(f"Could not open video: {video_path}")
+        # cap = cv2.VideoCapture(video_path)
+        # if not cap.isOpened():
+        #     raise ValueError(f"Could not open video: {video_path}")
 
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        frames = []
-        # pick a random frame from every keep_frames frames
-        for i in range(total_frames // self.keep_frames):
-            frame = read_frame(cap, random.randint(0, self.keep_frames - 1) + i * self.keep_frames)
-            frames.append(cv2.resize(frame, (224, 224)))
-        cap.release()
+        # total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        # frames = []
+        # # pick a random frame from every keep_frames frames
+        # for i in range(total_frames // self.keep_frames):
+        #     frame = read_frame(cap, random.randint(0, self.keep_frames - 1) + i * self.keep_frames)
+        #     frames.append(cv2.resize(frame, (224, 224)))
+        # cap.release()
 
-        # convert frames to numpy arrays
-        frames = np.array(frames)
+        # # convert frames to numpy arrays
+        # frames = np.array(frames)
 
-        # frames should be (frames_count x 3 x height x width)
-        frames = frames.transpose(0, 3, 1, 2)
+        # # frames should be (frames_count x 3 x height x width)
+        # frames = frames.transpose(0, 3, 1, 2)
 
-        # normalize frames with mean and std as in pretrained open_clip model mean = [0.48145466, 0.4578275, 0.40821073] and std = [0.26862954, 0.26130258, 0.27577711]
-        mean = np.array([0.48145466, 0.4578275, 0.40821073]).reshape(1, 3, 1, 1)
-        std = np.array([0.26862954, 0.26130258, 0.27577711]).reshape(1, 3, 1, 1)
-        frames = (frames - mean) / std
+        # # normalize frames with mean and std as in pretrained open_clip model mean = [0.48145466, 0.4578275, 0.40821073] and std = [0.26862954, 0.26130258, 0.27577711]
+        # mean = np.array([0.48145466, 0.4578275, 0.40821073]).reshape(1, 3, 1, 1)
+        # std = np.array([0.26862954, 0.26130258, 0.27577711]).reshape(1, 3, 1, 1)
+        # frames = (frames - mean) / std
 
-        frames = torch.tensor(frames, dtype=torch.float32)
+        # frames = torch.tensor(frames, dtype=torch.float32)
+
+        frames = torch.randn(1, 3, 224, 224)
+        text_description = random.choice(["This is a test", "This is a test 2", "This is a test 3"])
 
         return frames, text_description
 
@@ -147,7 +149,7 @@ tokenizer = open_clip.get_tokenizer('ViT-B-32')
 # print(loss)
 
 if __name__ == "__main__":
-    train_batch_size = 16
+    batch_size = 16
     test_batch_size = 16
     num_workers = 0
     lr = 1e-4
@@ -172,6 +174,11 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
+    train_video_paths = ["clip.mp4"]*128
+    train_text_paths = ["sample_text.txt"]*128
+    val_video_paths = ["clip.mp4"]*64
+    val_text_paths = ["sample_text.txt"]*64
+
     train_dataset = EmbeddingDataset(train_video_paths, train_text_paths, tokenizer)
     val_dataset = EmbeddingDataset(val_video_paths, val_text_paths, tokenizer)
 
@@ -181,14 +188,14 @@ if __name__ == "__main__":
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}/{num_epochs}")
         model.train()
-        pbar = tqdm(train_loader)
+        pbar = tqdm(train_loader, desc=f"Training Epoch {epoch+1}/{num_epochs}...", total=len(train_loader))
         total_loss = 0
         n = 0
-        for i, batch in enumerate(pbar, desc="Training"):
+        for i, batch in enumerate(pbar):
             video, text = batch
             loss = model.compute_loss(video, text)
-            total_loss += loss.item() * batch.shape[0]
-            n += batch.shape[0]
+            total_loss += loss.item() * video.shape[0]
+            n += video.shape[0]
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -200,11 +207,11 @@ if __name__ == "__main__":
         pbar = tqdm(val_loader, desc="Evaluating")
         total_loss = 0
         n = 0
-        for i, batch in enumerate(pbar, desc="Evaluating"):
+        for i, batch in enumerate(pbar):
             video, text = batch
             loss = model.compute_loss(video, text)
-            total_loss += loss.item() * batch.shape[0]
-            n += batch.shape[0]
+            total_loss += loss.item() * video.shape[0]
+            n += video.shape[0]
             pbar.set_description(f"Loss: {total_loss / n}")
         print(f"Val loss {epoch+1}: {total_loss / n}")
 
