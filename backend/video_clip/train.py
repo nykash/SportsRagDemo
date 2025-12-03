@@ -3,7 +3,7 @@ import torch.nn as nn
 import cv2
 import random
 import numpy as np
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import open_clip
 import torch.nn.functional as F
 
@@ -129,20 +129,100 @@ tokenizer = open_clip.get_tokenizer('ViT-B-32')
 #print("hello", tokenizer(["hi"]))
 # print(preprocess) --> shows that mean/std are     Normalize(mean=(0.48145466, 0.4578275, 0.40821073), std=(0.26862954, 0.26130258, 0.27577711))
 
-dataset = EmbeddingDataset(["clip.mp4"], ["sample_text.txt"], tokenizer)
-model = EmbeddingModel().to(device)
+# dataset = EmbeddingDataset(["clip.mp4"], ["sample_text.txt"], tokenizer)
+# model = EmbeddingModel().to(device)
 
-X = dataset[0][0].unsqueeze(0).repeat(2, 1, 1, 1, 1) + torch.randn(2, 1, 3, 224, 224)
-text = [dataset[0][1], "hi bro"]
+# X = dataset[0][0].unsqueeze(0).repeat(2, 1, 1, 1, 1) + torch.randn(2, 1, 3, 224, 224)
+# text = [dataset[0][1], "hi bro"]
 
-print(text)
+# print(text)
 
-video = model.encode_video(X)
+# video = model.encode_video(X)
 
-text_embedding = model.encode_text(text[0])
-loss = model.compute_loss(X, text)
+# text_embedding = model.encode_text(text[0])
+# loss = model.compute_loss(X, text)
 
-print(video)
-print(text_embedding)
-print(loss)
+# print(video)
+# print(text_embedding)
+# print(loss)
 
+if __name__ == "__main__":
+    train_batch_size = 16
+    test_batch_size = 16
+    num_workers = 0
+    lr = 1e-4
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    num_epochs = 50
+    freeze_clip = False
+
+    patience = 10
+    best_loss = float('inf')
+    best_epoch = 0
+    early_stop_count = 0
+
+    model_name = "ViT-B-32"
+    model = EmbeddingModel(model_name).to(device)
+    tokenizer = open_clip.get_tokenizer(model_name)
+
+    if freeze_clip:
+        for param in model.model.parameters():
+            param.requires_grad = False
+        for param in model.fusion.parameters():
+            param.requires_grad = True
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    train_dataset = EmbeddingDataset(train_video_paths, train_text_paths, tokenizer)
+    val_dataset = EmbeddingDataset(val_video_paths, val_text_paths, tokenizer)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=test_batch_size, shuffle=False, num_workers=num_workers)
+
+    for epoch in range(num_epochs):
+        print(f"Epoch {epoch+1}/{num_epochs}")
+        model.train()
+        pbar = tqdm(train_loader)
+        total_loss = 0
+        n = 0
+        for i, batch in enumerate(pbar, desc="Training"):
+            video, text = batch
+            loss = model.compute_loss(video, text)
+            total_loss += loss.item() * batch.shape[0]
+            n += batch.shape[0]
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            pbar.set_description(f"Loss: {total_loss / n}")
+
+        print(f"Train loss {epoch+1}: {total_loss / n}")
+
+        model.eval()
+        pbar = tqdm(val_loader, desc="Evaluating")
+        total_loss = 0
+        n = 0
+        for i, batch in enumerate(pbar, desc="Evaluating"):
+            video, text = batch
+            loss = model.compute_loss(video, text)
+            total_loss += loss.item() * batch.shape[0]
+            n += batch.shape[0]
+            pbar.set_description(f"Loss: {total_loss / n}")
+        print(f"Val loss {epoch+1}: {total_loss / n}")
+
+        if total_loss / n < best_loss:
+            best_loss = total_loss / n
+            best_epoch = epoch
+            early_stop_count = 0
+            torch.save(model.state_dict(), "best_model.pth")
+            with open("best_epoch.txt", "w") as f:
+                f.write(str(epoch+1) + ", " + str(total_loss / n))
+        else:
+            early_stop_count += 1
+
+        if early_stop_count >= patience:
+            print(f"Early stopping at epoch {epoch+1}")
+            break
+
+    torch.save(model.state_dict(), "last_model.pth")
+
+    if epoch != best_epoch:
+        print(f"Best epoch: {best_epoch+1}, Best loss: {best_loss}")
