@@ -66,8 +66,8 @@ class EmbeddingModel(nn.Module):
 
         # clip loss
         
-        norm_video_embedding = video_embedding / (torch.norm(video_embedding, dim=1) + 1e-8)
-        norm_text_embedding = text_embedding / (torch.norm(text_embedding, dim=1) + 1e-8)
+        norm_video_embedding = video_embedding / (torch.norm(video_embedding, dim=1, keepdim=True) + 1e-8)
+        norm_text_embedding = text_embedding / (torch.norm(text_embedding, dim=1, keepdim=True) + 1e-8)
         logits = norm_video_embedding @ norm_text_embedding.T
         labels = torch.arange(video_embedding.shape[0]).to(video_embedding.device)
 
@@ -132,9 +132,17 @@ tokenizer = open_clip.get_tokenizer('ViT-B-32')
 dataset = EmbeddingDataset(["clip.mp4"], ["sample_text.txt"], tokenizer)
 model = EmbeddingModel().to(device)
 
-video = model.encode_video(torch.unsqueeze(dataset[0][0], 0))
+X = dataset[0][0].unsqueeze(0).repeat(2, 1, 1, 1, 1) + torch.randn(2, 1, 3, 224, 224)
+text = [dataset[0][1], "hi bro"]
 
-text = model.encode_text([dataset[0][1]])
-loss = model.compute_loss(torch.unsqueeze(dataset[0][0], 0), [dataset[0][1]])
+print(text)
+
+video = model.encode_video(X)
+
+text_embedding = model.encode_text(text[0])
+loss = model.compute_loss(X, text)
+
+print(video)
+print(text_embedding)
 print(loss)
 
