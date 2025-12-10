@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-Train a jersey number classifier using EfficientNet
-Extracts cropped jersey regions from quadrilateral annotations and trains a classification model.
-Predicts first and second digits separately (20 outputs total).
-"""
-
 import torch
 import torch.nn as nn
 import torch.optim as optim

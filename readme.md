@@ -117,12 +117,6 @@ The API will be available at `http://127.0.0.1:5000`
 - `GET /health` - Health check
 - `POST /retrieve` - Retrieve video clips based on text query
 
-### Running the CLIP Service
-
-```bash
-cd CLIP
-uvicorn main:app --reload
-```
 
 ### Player Tracking
 
@@ -132,7 +126,7 @@ cd player_tracking/pipeline
 sh ./predict.sh
 ```
 
-## Technologies
+## Acknlowedgements
 
 - **CLIP**: OpenCLIP for video/text embeddings
 - **Pinecone**: Vector database for semantic search
