@@ -1,0 +1,4 @@
+model_name: ViT-B/16
+lr: 0.0001
+use_lora: true
+lora_r: 4

@@ -12,3 +12,4 @@ dotenv
 pinecone
 open-clip-torch
 opencv-python
+matplotlib
