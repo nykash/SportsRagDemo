@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Highlights Search</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <video id="backgroundVideo" class="background-video" autoplay muted playsinline preload="auto"></video>
+    <div class="page-wrapper">
+        <header class="search-header">
+            <div class="header-content">
+                <h1 class="title">Volleyball Highlights</h1>
+                <div class="search-container">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Search for players, events, or highlights..."
+                        autocomplete="off"
+                    />
+                    <button id="searchButton" class="search-button" aria-label="Search">
+                        <span>Search</span>
+                    </button>
+                </div>
+                <div id="suggestions" class="suggestions"></div>
+                <div class="tags-container">
+                    <label class="tags-label">Filter by tags:</label>
+                    <div class="tags-multiselect" id="tagsMultiselect">
+                        <div class="tag-option" data-tag="block">
+                            <input type="checkbox" id="tag-block" value="block">
+                            <label for="tag-block">Block</label>
+                        </div>
+                        <div class="tag-option" data-tag="serve">
+                            <input type="checkbox" id="tag-serve" value="serve">
+                            <label for="tag-serve">Serve</label>
+                        </div>
+                        <div class="tag-option" data-tag="set">
+                            <input type="checkbox" id="tag-set" value="set">
+                            <label for="tag-set">Set</label>
+                        </div>
+                        <div class="tag-option" data-tag="defense">
+                            <input type="checkbox" id="tag-defense" value="defense">
+                            <label for="tag-defense">Defense</label>
+                        </div>
+                        <div class="tag-option" data-tag="spike">
+                            <input type="checkbox" id="tag-spike" value="spike">
+                            <label for="tag-spike">Spike</label>
+                        </div>
+                        <div class="tag-option" data-tag="long_rally">
+                            <input type="checkbox" id="tag-long_rally" value="long_rally">
+                            <label for="tag-long_rally">Long Rally</label>
+                        </div>
+                        <div class="tag-option" data-tag="successful_defense">
+                            <input type="checkbox" id="tag-successful_defense" value="successful_defense">
+                            <label for="tag-successful_defense">Successful Defense</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main class="main-content">
+            <div id="resultsContainer" class="results-container" style="display: none;">
+                <div class="results-header">
+                    <h2 id="resultsTitle" class="results-title">Search Results</h2>
+                    <span id="resultsCount" class="results-count"></span>
+                </div>
+                <div id="resultsGrid" class="results-grid"></div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+
